@@ -1,9 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import ReactSignalsPlot from 'react-signals-plot';
+import ReactSignalsPlot from '../../src/ReactSignalsPlot';
 
 const App = React.createClass({
-  render() {
+  render: () => {
     return (
       <div>
         <ReactSignalsPlot />
