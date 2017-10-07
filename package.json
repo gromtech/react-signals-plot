@@ -1,8 +1,11 @@
 {
   "name": "react-signals-plot",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "React Signals Plot",
   "main": "build/ReactSignalsPlot.js",
+  "files": [
+    "build"
+  ],
   "license": "MIT",
   "homepage": "https://github.com/gromtech/react-signals-plot",
   "repository": {
