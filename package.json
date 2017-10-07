@@ -20,7 +20,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "webpack --watch",
     "build": "webpack",
-    "dev": "webpack --config webpack.dev.config.js"
+    "dev": "webpack --config webpack.dev.config.js",
+    "prepublish": "webpack"
   },
   "author": {
     "name": "Roman Guseinov",
