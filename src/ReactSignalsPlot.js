@@ -1,6 +1,8 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import dimensions from 'react-dimensions';
 import * as d3 from 'd3';
+import DataSource from './DataSource';
 
 import './ReactSignalsPlot.scss';
 
@@ -8,7 +10,7 @@ class ReactSignalsPlot extends React.Component {
   constructor(props){
     super(props);
     this.state = {
-      data: props.data,
+      data: this.prepareData(props.data),
       labels: props.labels || {},
       margin: props.margin || {
         top: 20,
@@ -17,6 +19,20 @@ class ReactSignalsPlot extends React.Component {
         left: 50
       }
     };
+  }
+
+  prepareData(data) {
+    let prepared = [];
+    if (Array.isArray(data)) {
+      prepared = data.map((item) => {
+        const datasource = new DataSource(item.values, this.props.samplesLimit);
+        return {
+          id: item.id,
+          ds: datasource
+        };
+      });
+    }
+    return prepared;
   }
 
   componentDidMount() {
@@ -36,7 +52,7 @@ class ReactSignalsPlot extends React.Component {
     this.setState({
       height: nextProps.containerHeight,
       width: nextProps.containerWidth,
-      data: nextProps.data
+      data: this.prepareData(nextProps.data)
     }, () => {
       this.refreshChart();
     });
@@ -52,21 +68,28 @@ class ReactSignalsPlot extends React.Component {
     return width - margin.left - margin.right;
   }
 
-  getExtent(data, field) {
-    let min = null;
-    let max = null;
+  getExtent(data) {
+    let extent = null;
     data.forEach((line) => {
-      line.values.forEach((value) => {
-        const fieldValue = value[field];
-        if ((min === null) || (fieldValue < min)) {
-          min = fieldValue;
+      const lineExtent = line.ds.getExtent();
+      if (!extent) {
+        extent = lineExtent;
+      } else {
+        if (lineExtent.x[0] < extent.x[0]) {
+          extent.x[0] = lineExtent.x[0];
         }
-        if ((max === null) || (fieldValue > max)) {
-          max = fieldValue;
+        if (lineExtent.x[1] > extent.x[1]) {
+          extent.x[1] = lineExtent.x[1];
         }
-      });
+        if (lineExtent.y[0] < extent.y[0]) {
+          extent.y[0] = lineExtent.y[0];
+        }
+        if (lineExtent.y[1] > extent.y[1]) {
+          extent.y[1] = lineExtent.y[1];
+        }
+      }
     });
-    return [min, max];
+    return extent;
   }
 
   createAxisBottom(g, scaleLinear) {
@@ -123,10 +146,10 @@ class ReactSignalsPlot extends React.Component {
       .x(d => x(d.x))
       .y(d => y(d.y));
 
-    const data = this.props.data;
-
-    x.domain(this.getExtent(data, 'x'));
-    y.domain(this.getExtent(data, 'y'));
+    const data = this.state.data;
+    const extent = this.getExtent(data);
+    x.domain(extent.x);
+    y.domain(extent.y);
     z.domain(data.map(series => series.id ));
 
     this.createAxisBottom(g, x);
@@ -141,7 +164,7 @@ class ReactSignalsPlot extends React.Component {
       .attr("class", "line")
       .attr("fill", "none")
       .attr('stroke-width', '0.1em')
-      .attr("d", d => line(d.values))
+      .attr("d", d => line(d.ds.getData()))
       .style("stroke", d => z(d.id));
   }
 
@@ -172,5 +195,13 @@ class ReactSignalsPlot extends React.Component {
     );
   }
 }
+
+ReactSignalsPlot.propTypes = {
+  samplesLimit: PropTypes.number
+};
+
+ReactSignalsPlot.defaultProps = {
+  samplesLimit: 100
+};
 
 export default dimensions()(ReactSignalsPlot);
