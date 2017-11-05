@@ -42,7 +42,7 @@ function compressBlock(data, index) {
     const len = data.length;
     if (len > 4) {
       compressed = getMinMax(data, index);
-      if (compressed.length == 2) {
+      if (compressed.length === 2) {
         if ((index === 0) && (compressed[0].x > data[0].x)) {
           compressed.unshift(data[0]);
         } else if (((index + 4) >= len) && (compressed[1].x < data[len - 1].x)) {
@@ -71,7 +71,9 @@ function compressData(samples) {
       let index = 0;
       while (index < samples.length) {
         const compressedBlock = compressBlock(samples, index);
-        compressedBlock.forEach(sample => compressed.push(sample));
+        for (let i = 0; i < compressedBlock.length; i++) {
+          compressed.push(compressedBlock[i]);
+        }
         index += 4;
       }
     } else {

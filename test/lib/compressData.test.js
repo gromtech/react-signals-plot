@@ -1,10 +1,8 @@
 /* eslint-env mocha */
 const chai = require('chai');
-
-const expect = chai.expect;
-const assert = chai.assert;
-
 const { compressData } = require('../../src/lib/compress');
+
+const assert = chai.assert;
 
 function getSample(x, y) {
   return {

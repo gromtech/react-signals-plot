@@ -7,17 +7,14 @@ import DataSource from './DataSource';
 import './ReactSignalsPlot.scss';
 
 class ReactSignalsPlot extends React.Component {
-  constructor(props){
+  constructor(props) {
     super(props);
     this.state = {
       data: this.prepareData(props.data),
-      labels: props.labels || {},
-      margin: props.margin || {
-        top: 20,
-        right: 50,
-        bottom: 30,
-        left: 50
-      }
+      labels: props.labels,
+      margin: props.margin,
+      height: props.containerHeight,
+      width: props.containerWidth
     };
   }
 
@@ -33,19 +30,6 @@ class ReactSignalsPlot extends React.Component {
       });
     }
     return prepared;
-  }
-
-  componentDidMount() {
-    if (this.container) {
-      const { clientHeight, clientWidth } = this.container;
-      this.setState({
-        height: clientHeight,
-        width: clientWidth
-      }, () => {
-        this.refreshChart();
-      });
-    }
-    this.refreshChart();
   }
 
   componentWillReceiveProps(nextProps) {
@@ -68,7 +52,8 @@ class ReactSignalsPlot extends React.Component {
     return width - margin.left - margin.right;
   }
 
-  getExtent(data) {
+  getExtent() {
+    const data = this.state.data;
     let extent = null;
     data.forEach((line) => {
       const lineExtent = line.ds.getExtent();
@@ -96,29 +81,29 @@ class ReactSignalsPlot extends React.Component {
     const width = this.getSvgWidth();
     const height = this.getSvgHeight();
 
-    g.append("g")
-      .attr("class", "axis axis--x grid")
-      .attr("transform", "translate(0," + height + ")")
+    g.append('g')
+      .attr('class', 'axis axis--x grid')
+      .attr('transform', `translate(0,${height})`)
       .call(d3.axisBottom(scaleLinear).tickSize(-height))
-      .append("text")
-      .style("text-anchor","end")
-      .attr("x", width - 5)
-      .attr("dy", "-0.5em")
-      .attr("fill", "#000")
+      .append('text')
+      .style('text-anchor', 'end')
+      .attr('x', width - 5)
+      .attr('dy', '-0.5em')
+      .attr('fill', '#000')
       .text(this.state.labels.x);
   }
 
   createAxisLeft(g, scaleLinear) {
     const width = this.getSvgWidth();
-    g.append("g")
-      .attr("class", "axis axis--y grid")
+    g.append('g')
+      .attr('class', 'axis axis--y grid')
       .call(d3.axisLeft(scaleLinear).tickSize(-width))
-      .append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("y", 5)
-      .attr("x", - 5)
-      .attr("dy", "0.71em")
-      .attr("fill", "#000")
+      .append('text')
+      .attr('transform', 'rotate(-90)')
+      .attr('y', 5)
+      .attr('x', -5)
+      .attr('dy', '0.71em')
+      .attr('fill', '#000')
       .text(this.state.labels.y);
   }
 
@@ -132,7 +117,7 @@ class ReactSignalsPlot extends React.Component {
     const node = this.node;
     const svg = d3.select(node);
     const margin = this.state.margin;
-    svg.selectAll("*").remove();
+    svg.selectAll('*').remove();
 
     const width = this.getSvgWidth();
     const height = this.getSvgHeight();
@@ -147,25 +132,25 @@ class ReactSignalsPlot extends React.Component {
       .y(d => y(d.y));
 
     const data = this.state.data;
-    const extent = this.getExtent(data);
+    const extent = this.getExtent();
     x.domain(extent.x);
     y.domain(extent.y);
-    z.domain(data.map(series => series.id ));
+    z.domain(data.map(series => series.id));
 
     this.createAxisBottom(g, x);
     this.createAxisLeft(g, y);
 
-    const series = g.selectAll(".series")
+    const series = g.selectAll('.series')
       .data(data)
-      .enter().append("g")
-      .attr("class", "series");
+      .enter().append('g')
+      .attr('class', 'series');
 
-    series.append("path")
-      .attr("class", "line")
-      .attr("fill", "none")
+    series.append('path')
+      .attr('class', 'line')
+      .attr('fill', 'none')
       .attr('stroke-width', '0.1em')
-      .attr("d", d => line(d.ds.getData()))
-      .style("stroke", d => z(d.id));
+      .attr('d', d => line(d.ds.getData()))
+      .style('stroke', d => z(d.id));
   }
 
   renderSvg() {
@@ -174,21 +159,33 @@ class ReactSignalsPlot extends React.Component {
     if ((width > 0) && (height > 0)) {
       svg = (
         <svg
-          ref={ node => this.node = node }
+          ref={ (node) => { this.node = node; } }
           width={ this.state.width }
           height={ this.state.height }
-        >
-        </svg>
+        />
       );
     }
     return svg;
+  }
+
+  setContainer(container) {
+    if (!this.container) {
+      this.container = container;
+      const { clientHeight, clientWidth } = container;
+      this.setState({
+        height: clientHeight,
+        width: clientWidth
+      }, () => {
+        this.refreshChart();
+      });
+    }
   }
 
   render() {
     return (
       <div
         style={ this.props.style }
-        ref={ c => this.container = c }
+        ref={ c => this.setContainer(c) }
       >
         { this.renderSvg() }
       </div>
@@ -197,11 +194,28 @@ class ReactSignalsPlot extends React.Component {
 }
 
 ReactSignalsPlot.propTypes = {
-  samplesLimit: PropTypes.number
+  data: PropTypes.array,
+  samplesLimit: PropTypes.number,
+  labels: PropTypes.object,
+  margin: PropTypes.object,
+  style: PropTypes.object,
+  containerHeight: PropTypes.number,
+  containerWidth: PropTypes.number
 };
 
 ReactSignalsPlot.defaultProps = {
-  samplesLimit: 100
+  data: [],
+  samplesLimit: 100,
+  style: null,
+  labels: {},
+  margin: {
+    top: 20,
+    right: 50,
+    bottom: 30,
+    left: 50
+  },
+  containerHeight: 0,
+  containerWidth: 0
 };
 
 export default dimensions()(ReactSignalsPlot);

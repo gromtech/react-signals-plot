@@ -57,7 +57,7 @@ class DataSource {
     return {
       x: [this.extent.minX, this.extent.maxX],
       y: [this.extent.minY, this.extent.maxY]
-    }
+    };
   }
 
   getData(min, max) {

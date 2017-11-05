@@ -10,7 +10,7 @@ names.forEach((name, idx) => {
   for (let i = 0; i < 1000; i++) {
     signal.values.push({
       x: i,
-      y: Math.sin(0.1*i*(idx + 1) / Math.PI + idx*2)
+      y: Math.sin(((0.1 * i * (idx + 1)) / Math.PI) + (idx * 2))
     });
   }
   data.push(signal);
