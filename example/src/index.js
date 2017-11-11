@@ -5,12 +5,14 @@ import series from '../series/sin';
 
 class App extends React.Component {
   render() {
+    const interactive = true;
     return (
       <ReactSignalsPlot
         style={ { width: '100%', height: 250 } }
         data={ series.data }
-        samplesLimit={ 300 }
+        samplesLimit={ 250 }
         labels={ series.labels }
+        interactive={ interactive }
       />
     );
   }

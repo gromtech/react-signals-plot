@@ -3,59 +3,14 @@ import PropTypes from 'prop-types';
 import dimensions from 'react-dimensions';
 import * as d3 from 'd3';
 import DataSource from './DataSource';
+import TouchablePanel from './TouchablePanel';
 
 import './ReactSignalsPlot.scss';
 
-class ReactSignalsPlot extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      data: this.prepareData(props.data),
-      labels: props.labels,
-      margin: props.margin,
-      height: props.containerHeight,
-      width: props.containerWidth
-    };
-  }
-
-  prepareData(data) {
-    let prepared = [];
-    if (Array.isArray(data)) {
-      prepared = data.map((item) => {
-        const datasource = new DataSource(item.values, this.props.samplesLimit);
-        return {
-          id: item.id,
-          ds: datasource
-        };
-      });
-    }
-    return prepared;
-  }
-
-  componentWillReceiveProps(nextProps) {
-    this.setState({
-      height: nextProps.containerHeight,
-      width: nextProps.containerWidth,
-      data: this.prepareData(nextProps.data)
-    }, () => {
-      this.refreshChart();
-    });
-  }
-
-  getSvgHeight() {
-    const { height, margin } = this.state;
-    return height - margin.top - margin.bottom;
-  }
-
-  getSvgWidth() {
-    const { width, margin } = this.state;
-    return width - margin.left - margin.right;
-  }
-
-  getExtent() {
-    const data = this.state.data;
-    let extent = null;
-    data.forEach((line) => {
+function getExtent(datasources) {
+  let extent = null;
+  if (Array.isArray(datasources)) {
+    datasources.forEach((line) => {
       const lineExtent = line.ds.getExtent();
       if (!extent) {
         extent = lineExtent;
@@ -74,7 +29,59 @@ class ReactSignalsPlot extends React.Component {
         }
       }
     });
-    return extent;
+  }
+  return extent;
+}
+
+class ReactSignalsPlot extends React.Component {
+  constructor(props) {
+    super(props);
+    const datasources = this.prepareData(props.data);
+    this.state = {
+      data: datasources,
+      extent: getExtent(datasources),
+      labels: props.labels,
+      margin: props.margin,
+      height: props.containerHeight,
+      width: props.containerWidth
+    };
+    this.style = Object.assign({ position: 'relative' }, props.style);
+  }
+
+  prepareData(data) {
+    let prepared = [];
+    if (Array.isArray(data)) {
+      prepared = data.map((item) => {
+        const datasource = new DataSource(item.values, this.props.samplesLimit);
+        return {
+          id: item.id,
+          ds: datasource
+        };
+      });
+    }
+    return prepared;
+  }
+
+  componentWillReceiveProps(nextProps) {
+    const datasources = this.prepareData(nextProps.data);
+    this.setState({
+      height: nextProps.containerHeight,
+      width: nextProps.containerWidth,
+      data: datasources,
+      extent: getExtent(datasources)
+    }, () => {
+      this.refreshChart();
+    });
+  }
+
+  getSvgHeight() {
+    const { height, margin } = this.state;
+    return height - margin.top - margin.bottom;
+  }
+
+  getSvgWidth() {
+    const { width, margin } = this.state;
+    return width - margin.left - margin.right;
   }
 
   createAxisBottom(g, scaleLinear) {
@@ -132,7 +139,7 @@ class ReactSignalsPlot extends React.Component {
       .y(d => y(d.y));
 
     const data = this.state.data;
-    const extent = this.getExtent();
+    const extent = this.state.extent;
     x.domain(extent.x);
     y.domain(extent.y);
     z.domain(data.map(series => series.id));
@@ -149,7 +156,7 @@ class ReactSignalsPlot extends React.Component {
       .attr('class', 'line')
       .attr('fill', 'none')
       .attr('stroke-width', '0.1em')
-      .attr('d', d => line(d.ds.getData()))
+      .attr('d', d => line(d.ds.getData(extent.x[0], extent.x[1])))
       .style('stroke', d => z(d.id));
   }
 
@@ -181,13 +188,78 @@ class ReactSignalsPlot extends React.Component {
     }
   }
 
+  onChartMove(shift) {
+    const extent = this.state.extent;
+    if (extent && shift) {
+      const dx = (extent.x[1] - extent.x[0]) * shift.x;
+      const dy = (extent.y[1] - extent.y[0]) * shift.y;
+      this.setState({
+        extent: {
+          x: [extent.x[0] - dx, extent.x[1] - dx],
+          y: [extent.y[0] - dy, extent.y[1] - dy]
+        }
+      }, () => this.refreshChart());
+    }
+  }
+
+  getZoomExtent(zoom) {
+    const extent = this.state.extent;
+    let xLen = extent.x[1] - extent.x[0];
+    let yLen = extent.y[1] - extent.y[0];
+    const x0 = (zoom.x * xLen) + extent.x[0];
+    const y0 = (zoom.y * yLen) + extent.y[0];
+    xLen *= zoom.value;
+    yLen *= zoom.value;
+
+    const x1 = x0 - (xLen * zoom.x);
+    const x2 = x1 + xLen;
+    const y1 = y0 - (yLen * zoom.y);
+    const y2 = y1 + yLen;
+    return {
+      x: [x1, x2],
+      y: [y1, y2]
+    };
+  }
+
+  onChartZoom(zoom) {
+    const extent = this.state.extent;
+    if (extent && zoom) {
+      this.setState({
+        extent: this.getZoomExtent(zoom)
+      }, () => this.refreshChart());
+    }
+  }
+
+  getTouchablePanel() {
+    let panel = null;
+    if (this.props.interactive) {
+      const margin = this.state.margin;
+      const style = {
+        position: 'absolute',
+        top: margin.top,
+        right: margin.right,
+        bottom: margin.bottom,
+        left: margin.left
+      };
+      panel = (
+        <TouchablePanel
+          style={ style }
+          onMove={ shift => this.onChartMove(shift) }
+          onZoom={ zoom => this.onChartZoom(zoom) }
+        />
+      );
+    }
+    return panel;
+  }
+
   render() {
     return (
       <div
-        style={ this.props.style }
+        style={ this.style }
         ref={ c => this.setContainer(c) }
       >
         { this.renderSvg() }
+        { this.getTouchablePanel() }
       </div>
     );
   }
@@ -200,7 +272,8 @@ ReactSignalsPlot.propTypes = {
   margin: PropTypes.object,
   style: PropTypes.object,
   containerHeight: PropTypes.number,
-  containerWidth: PropTypes.number
+  containerWidth: PropTypes.number,
+  interactive: PropTypes.bool
 };
 
 ReactSignalsPlot.defaultProps = {
@@ -215,7 +288,8 @@ ReactSignalsPlot.defaultProps = {
     left: 50
   },
   containerHeight: 0,
-  containerWidth: 0
+  containerWidth: 0,
+  interactive: false
 };
 
 export default dimensions()(ReactSignalsPlot);

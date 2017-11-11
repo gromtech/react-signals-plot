@@ -2,6 +2,8 @@
 
 This is React Signals Plot component for geophysical data visualization.
 
+The component supports 'on the fly' data compression. That's why you can use it for drawing line charts which contain millions of points. ReactSignalsPlot is an interactive component. For now, you can use a mouse to move and zoom (other event handlers are in progress).
+
 ## Install
 
 `npm i --save react-signals-plot`
@@ -49,6 +51,7 @@ class PlotExample extends React.Component {
         data={ series.data }
         samplesLimit={ 300 }
         labels={ series.labels }
+        interactive={ true }
       />
     );
   }
