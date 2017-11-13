@@ -43,16 +43,16 @@ class ReactSignalsPlot extends React.Component {
       labels: props.labels,
       margin: props.margin,
       height: props.containerHeight,
-      width: props.containerWidth
+      width: props.containerWidth,
     };
     this.style = Object.assign({ position: 'relative' }, props.style);
   }
 
-  prepareData(data) {
+  prepareData(data, samplesLimit) {
     let prepared = [];
     if (Array.isArray(data)) {
       prepared = data.map((item) => {
-        const datasource = new DataSource(item.values, this.props.samplesLimit);
+        const datasource = new DataSource(item.values, samplesLimit || this.props.samplesLimit);
         return {
           id: item.id,
           ds: datasource
@@ -63,15 +63,22 @@ class ReactSignalsPlot extends React.Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    const datasources = this.prepareData(nextProps.data);
-    this.setState({
-      height: nextProps.containerHeight,
-      width: nextProps.containerWidth,
-      data: datasources,
-      extent: getExtent(datasources)
-    }, () => {
-      this.refreshChart();
-    });
+    if ((this.props.data !== nextProps.data)) {
+      const datasources = this.prepareData(nextProps.data, this.props.samplesLimit);
+      this.setState({
+        data: datasources,
+        extent: getExtent(datasources)
+      }, () => {
+        this.refreshChart();
+      });
+    } else {
+      this.setState({
+        height: nextProps.containerHeight,
+        width: nextProps.containerWidth
+      }, () => {
+        this.refreshChart();
+      });
+    }
   }
 
   getSvgHeight() {
