@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import dimensions from 'react-dimensions';
 import * as d3 from 'd3';
 import DataSource from './DataSource';
 import TouchablePanel from './TouchablePanel';
@@ -42,11 +41,28 @@ class ReactSignalsPlot extends React.Component {
       data: datasources,
       extent: getExtent(datasources),
       labels: props.labels,
-      margin: props.margin,
-      height: props.containerHeight,
-      width: props.containerWidth,
+      margin: props.margin
     };
     this.style = Object.assign({ position: 'relative' }, props.style);
+
+    this.onResize = () => {
+      if (this.container) {
+        this.setState({
+          height: this.container.clientHeight,
+          width: this.container.clientWidth
+        }, () => {
+          this.refreshChart();
+        });
+      }
+    };
+  }
+
+  componentDidMount() {
+    window.addEventListener('resize', this.onResize, false);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.onResize);
   }
 
   prepareData(data, samplesLimit) {
@@ -69,13 +85,6 @@ class ReactSignalsPlot extends React.Component {
       this.setState({
         data: datasources,
         extent: getExtent(datasources)
-      }, () => {
-        this.refreshChart();
-      });
-    } else {
-      this.setState({
-        height: nextProps.containerHeight,
-        width: nextProps.containerWidth
       }, () => {
         this.refreshChart();
       });
@@ -260,8 +269,6 @@ ReactSignalsPlot.propTypes = {
   labels: PropTypes.object,
   margin: PropTypes.object,
   style: PropTypes.object,
-  containerHeight: PropTypes.number,
-  containerWidth: PropTypes.number,
   interactive: PropTypes.bool
 };
 
@@ -276,9 +283,7 @@ ReactSignalsPlot.defaultProps = {
     bottom: 30,
     left: 50
   },
-  containerHeight: 0,
-  containerWidth: 0,
   interactive: false
 };
 
-export default dimensions()(ReactSignalsPlot);
+export default ReactSignalsPlot;

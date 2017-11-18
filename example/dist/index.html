@@ -2,19 +2,24 @@
 <head>
 	<title>react-signals-plot</title>
 	<meta name="viewport" content="width=device-width" />
+	<style>
+		body {
+			margin: 0px;
+			padding: 0px;
+			position: absolute;
+			height: 100%;
+			width: 100%;
+		}
+		.container, #app {
+			position: relative;
+			height: 100%;
+			width: 100%;
+		}
+	</style>
 </head>
 <body>
 	<div class="container" style="text-align: center;">
-		<h1>react-signals-plot</h1>
-		<h2><a href="https://github.com/gromtech/react-signals-plot">View project on GitHub</a></h2>
-		<!-- the example app is rendered into this div -->
 		<div id="app"></div>
-		<div class="hint">
-			<!-- put any hints about your component example here -->
-		</div>
-		<div class="footer">
-			Copyright &copy; 2017 Roman Guseinov.
-		</div>
 	</div>
 	<script src="index.js"></script>
 </body>

@@ -78,6 +78,7 @@ class TouchablePanel extends React.Component {
 
   onMouseWheel(event) {
     event.stopPropagation();
+    event.preventDefault();
     const delta = event.deltaY || event.detail || event.wheelDelta;
     const zoom = Object.assign({}, this.getCoordinates(event), {
       value: delta < 0 ? 0.5 : 2
