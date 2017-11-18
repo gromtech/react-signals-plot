@@ -4,6 +4,7 @@ import dimensions from 'react-dimensions';
 import * as d3 from 'd3';
 import DataSource from './DataSource';
 import TouchablePanel from './TouchablePanel';
+import zoom from './lib/zoom';
 
 import './ReactSignalsPlot.scss';
 
@@ -209,30 +210,11 @@ class ReactSignalsPlot extends React.Component {
     }
   }
 
-  getZoomExtent(zoom) {
+  onChartZoom(params) {
     const extent = this.state.extent;
-    let xLen = extent.x[1] - extent.x[0];
-    let yLen = extent.y[1] - extent.y[0];
-    const x0 = (zoom.x * xLen) + extent.x[0];
-    const y0 = (zoom.y * yLen) + extent.y[0];
-    xLen *= zoom.value;
-    yLen *= zoom.value;
-
-    const x1 = x0 - (xLen * zoom.x);
-    const x2 = x1 + xLen;
-    const y1 = y0 - (yLen * zoom.y);
-    const y2 = y1 + yLen;
-    return {
-      x: [x1, x2],
-      y: [y1, y2]
-    };
-  }
-
-  onChartZoom(zoom) {
-    const extent = this.state.extent;
-    if (extent && zoom) {
+    if (extent && params) {
       this.setState({
-        extent: this.getZoomExtent(zoom)
+        extent: zoom.getExtent(this.state.extent, params)
       }, () => this.refreshChart());
     }
   }
@@ -252,7 +234,7 @@ class ReactSignalsPlot extends React.Component {
         <TouchablePanel
           style={ style }
           onMove={ shift => this.onChartMove(shift) }
-          onZoom={ zoom => this.onChartZoom(zoom) }
+          onZoom={ params => this.onChartZoom(params) }
         />
       );
     }
