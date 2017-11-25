@@ -111,7 +111,7 @@ class App extends React.Component {
             interactive={ interactive }
           />
           <div className="footer">
-            Copyright &copy; 2017 Roman Guseinov.
+            Roman Guseinov, 2017
           </div>
         </div>
       </MuiThemeProvider>

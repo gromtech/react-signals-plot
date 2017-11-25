@@ -1,8 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import * as d3 from 'd3';
+import _ from 'underscore';
 import DataSource from './DataSource';
 import TouchablePanel from './TouchablePanel';
+import SignalsLegend from './SignalsLegend';
 import zoom from './lib/zoom';
 
 import './ReactSignalsPlot.scss';
@@ -33,6 +35,19 @@ function getExtent(datasources) {
   return extent;
 }
 
+function getLegend(data) {
+  const legend = [];
+  if (Array.isArray(data)) {
+    data.forEach((item, index) => {
+      legend.push({
+        name: item.id,
+        color: d3.schemeCategory10[index % 10]
+      });
+    });
+  }
+  return legend;
+}
+
 class ReactSignalsPlot extends React.Component {
   constructor(props) {
     super(props);
@@ -41,11 +56,12 @@ class ReactSignalsPlot extends React.Component {
       data: datasources,
       extent: getExtent(datasources),
       labels: props.labels,
-      margin: props.margin
+      margin: props.margin,
+      legend: getLegend(datasources)
     };
     this.style = Object.assign({ position: 'relative' }, props.style);
 
-    this.onResize = () => {
+    this.onResize = _.debounce(() => {
       if (this.container) {
         this.setState({
           height: this.container.clientHeight,
@@ -54,7 +70,7 @@ class ReactSignalsPlot extends React.Component {
           this.refreshChart();
         });
       }
-    };
+    }, 200);
   }
 
   componentDidMount() {
@@ -84,7 +100,8 @@ class ReactSignalsPlot extends React.Component {
       const datasources = this.prepareData(nextProps.data, this.props.samplesLimit);
       this.setState({
         data: datasources,
-        extent: getExtent(datasources)
+        extent: getExtent(datasources),
+        legend: getLegend(datasources)
       }, () => {
         this.refreshChart();
       });
@@ -250,6 +267,18 @@ class ReactSignalsPlot extends React.Component {
     return panel;
   }
 
+  renderLegend() {
+    let legend = null;
+    if (this.props.showLegend) {
+      legend = (
+        <SignalsLegend
+          signals={ this.state.legend }
+        />
+      );
+    }
+    return legend;
+  }
+
   render() {
     return (
       <div
@@ -258,6 +287,7 @@ class ReactSignalsPlot extends React.Component {
       >
         { this.renderSvg() }
         { this.getTouchablePanel() }
+        { this.renderLegend() }
       </div>
     );
   }
@@ -269,7 +299,8 @@ ReactSignalsPlot.propTypes = {
   labels: PropTypes.object,
   margin: PropTypes.object,
   style: PropTypes.object,
-  interactive: PropTypes.bool
+  interactive: PropTypes.bool,
+  showLegend: PropTypes.bool
 };
 
 ReactSignalsPlot.defaultProps = {
@@ -280,10 +311,11 @@ ReactSignalsPlot.defaultProps = {
   margin: {
     top: 20,
     right: 50,
-    bottom: 30,
+    bottom: 40,
     left: 50
   },
-  interactive: false
+  interactive: false,
+  showLegend: true
 };
 
 export default ReactSignalsPlot;

@@ -70,7 +70,6 @@ class DataSource {
   }
 
   getData(min, max) {
-    // TODO use binary search
     let data = [];
     if ((!min) || (!max)) {
       for (let i = 0; i < this.compressed.length; i++) {

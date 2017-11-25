@@ -1,0 +1,25 @@
+.legend-container {
+  position: absolute;
+  width: 100%;
+  bottom: 5px;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+
+.legend-signal {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.legend-signal-color {
+  height: 12px;
+  width: 12px;
+  margin-left: 5px;
+  margin-right: 5px;
+}
+
+.legend-signal-text {
+
+}

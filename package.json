@@ -1,6 +1,6 @@
 {
   "name": "react-signals-plot",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "React Signals Plot",
   "main": "build/ReactSignalsPlot.js",
   "files": [
@@ -19,10 +19,12 @@
     "d3": "4.11.0",
     "prop-types": "^15.6.0",
     "react": "15.5.4",
-    "react-dom": "15.5.4"
+    "react-dom": "15.5.4",
+    "underscore": "^1.8.3"
   },
   "scripts": {
     "build": "webpack",
+    "build-example": "cross-env WEBPACK_ENV=build webpack --config webpack.dev.config.js",
     "dev": "webpack --config webpack.dev.config.js",
     "lint": "cross-env WEBPACK_ENV=eslint node node_modules/eslint/bin/eslint.js . --ext .jsx,.js",
     "test": "mocha test/**/*.js",
