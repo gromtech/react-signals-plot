@@ -98,10 +98,13 @@ class ReactSignalsPlot extends React.Component {
   componentWillReceiveProps(nextProps) {
     if ((this.props.data !== nextProps.data)) {
       const datasources = this.prepareData(nextProps.data, this.props.samplesLimit);
+      const { clientHeight, clientWidth } = this.container || {};
       this.setState({
         data: datasources,
         extent: getExtent(datasources),
-        legend: getLegend(datasources)
+        legend: getLegend(datasources),
+        height: clientHeight,
+        width: clientWidth
       }, () => {
         this.refreshChart();
       });
@@ -149,7 +152,7 @@ class ReactSignalsPlot extends React.Component {
   }
 
   refreshChart() {
-    if (this.state.height && this.state.width) {
+    if (this.state.height && this.state.width && this.state.extent) {
       this.refreshLineChart();
     }
   }
