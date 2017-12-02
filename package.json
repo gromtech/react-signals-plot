@@ -1,6 +1,6 @@
 {
   "name": "react-signals-plot",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.2",
   "description": "React Signals Plot",
   "main": "build/ReactSignalsPlot.js",
   "files": [

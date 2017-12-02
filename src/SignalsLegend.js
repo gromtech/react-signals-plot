@@ -2,15 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import './SignalsLegend.scss';
 
-function createLegendItem(signal) {
-  return (
-    <div className="legend-signal" key={ `${signal.name}/${signal.color}` }>
-      <div className="legend-signal-color" style={ { background: signal.color } } />
-      <div className="legend-signal-text">{ signal.name }</div>
-    </div>
-  );
-}
-
 class SignalsLegend extends React.Component {
   constructor(props) {
     super(props);
@@ -19,11 +10,39 @@ class SignalsLegend extends React.Component {
     };
   }
 
+  componentWillReceiveProps(nextProps) {
+    this.setState({
+      signals: nextProps.signals
+    });
+  }
+
+  onItemClick(signal) {
+    if (this.props.onItemClick) {
+      this.props.onItemClick(signal);
+    }
+  }
+
+  renderItem(signal) {
+    const color = signal.visible ? signal.color : 'lightgray';
+    return (
+      <div
+        className="legend-signal"
+        key={ `${signal.name}/${signal.color}` }
+        onClick={ () => this.onItemClick(signal) }
+      >
+        <div className="legend-signal-color" style={ { background: color } } />
+        <div className="legend-signal-text" style={ { color: color } }>
+          { signal.name }
+        </div>
+      </div>
+    );
+  }
+
   render() {
     return (
       <div style={ this.props.style } className="legend-container">
         {
-          this.state.signals.map(signal => createLegendItem(signal))
+          this.state.signals.map(signal => this.renderItem(signal))
         }
       </div>
     );
@@ -32,12 +51,14 @@ class SignalsLegend extends React.Component {
 
 SignalsLegend.propTypes = {
   style: PropTypes.object,
-  signals: PropTypes.array
+  signals: PropTypes.array,
+  onItemClick: PropTypes.func
 };
 
 SignalsLegend.defaultProps = {
   style: null,
-  signals: []
+  signals: [],
+  onItemClick: null
 };
 
 export default SignalsLegend;

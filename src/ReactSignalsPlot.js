@@ -35,29 +35,17 @@ function getExtent(datasources) {
   return extent;
 }
 
-function getLegend(data) {
-  const legend = [];
-  if (Array.isArray(data)) {
-    data.forEach((item, index) => {
-      legend.push({
-        name: item.id,
-        color: d3.schemeCategory10[index % 10]
-      });
-    });
-  }
-  return legend;
-}
-
 class ReactSignalsPlot extends React.Component {
   constructor(props) {
     super(props);
     const datasources = this.prepareData(props.data);
+    this.nonvisibleSignals = {};
     this.state = {
       data: datasources,
       extent: getExtent(datasources),
       labels: props.labels,
       margin: props.margin,
-      legend: getLegend(datasources)
+      legend: this.getLegend(datasources)
     };
     this.style = Object.assign({ position: 'relative' }, props.style);
 
@@ -102,13 +90,27 @@ class ReactSignalsPlot extends React.Component {
       this.setState({
         data: datasources,
         extent: getExtent(datasources),
-        legend: getLegend(datasources),
+        legend: this.getLegend(datasources),
         height: clientHeight,
         width: clientWidth
       }, () => {
         this.refreshChart();
       });
     }
+  }
+
+  getLegend(data) {
+    const legend = [];
+    if (Array.isArray(data)) {
+      data.forEach((item, index) => {
+        legend.push({
+          name: item.id,
+          color: d3.schemeCategory10[index % 10],
+          visible: !this.nonvisibleSignals[item.id]
+        });
+      });
+    }
+    return legend;
   }
 
   getSvgHeight() {
@@ -175,7 +177,18 @@ class ReactSignalsPlot extends React.Component {
       .x(d => x(d.x))
       .y(d => y(d.y));
 
-    const data = this.state.data;
+    const data = this.state.data.map((series) => {
+      if (!this.nonvisibleSignals[series.id]) {
+        return series;
+      }
+      return {
+        id: series.id,
+        ds: {
+          getData: () => []
+        }
+      };
+    });
+
     const extent = this.state.extent;
     x.domain(extent.x);
     y.domain(extent.y);
@@ -270,12 +283,20 @@ class ReactSignalsPlot extends React.Component {
     return panel;
   }
 
+  onLegendItemClick(item) {
+    this.nonvisibleSignals[item.name] = !this.nonvisibleSignals[item.name];
+    this.setState({
+      legend: this.getLegend(this.state.data)
+    }, () => this.refreshChart());
+  }
+
   renderLegend() {
     let legend = null;
     if (this.props.showLegend) {
       legend = (
         <SignalsLegend
           signals={ this.state.legend }
+          onItemClick={ item => this.onLegendItemClick(item) }
         />
       );
     }
