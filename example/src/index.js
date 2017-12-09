@@ -2,13 +2,29 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 /* eslint-disable import/no-extraneous-dependencies */
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+import getMuiTheme from 'material-ui/styles/getMuiTheme';
 import injectTapEventPlugin from 'react-tap-event-plugin';
-import { AppBar, IconButton, SvgIcon } from 'material-ui';
+import { blue500, blue700 } from 'material-ui/styles/colors';
+import AppBar from 'material-ui/AppBar';
+import Drawer from 'material-ui/Drawer';
+import IconButton from 'material-ui/IconButton';
+import SvgIcon from 'material-ui/SvgIcon';
+import Checkbox from 'material-ui/Checkbox';
+import SelectField from 'material-ui/SelectField';
+import MenuItem from 'material-ui/MenuItem';
 /* eslint-enable import/no-extraneous-dependencies */
 import ReactSignalsPlot from '../../src/ReactSignalsPlot';
 import series from '../series/sin';
+import packageJson from '../../package.json';
 
 injectTapEventPlugin();
+
+const muiTheme = getMuiTheme({
+  palette: {
+    primary1Color: blue500,
+    primary2Color: blue700
+  }
+});
 
 const GitHubIcon = props => (
   <SvgIcon { ...props }>
@@ -22,31 +38,16 @@ const GitHubIcon = props => (
   </SvgIcon>
 );
 
-function getAppBar() {
-  const rightButton = (
-    <IconButton
-      href="https://github.com/gromtech/react-signals-plot"
-    >
-      <GitHubIcon />
-    </IconButton>
-  );
-  return (
-    <AppBar
-      title="react-signals-plot"
-      showMenuIconButton={ false }
-      iconElementRight={ rightButton }
-    />
-  );
-}
-
 class App extends React.Component {
   constructor(props) {
     super(props);
     const size = 10000;
     this.state = {
-      size: `${size}`,
+      size: size,
+      samplesLimit: 100,
       series: series(size),
-      btnDisabled: false
+      settingsUpdating: false,
+      zoomByRect: false
     };
   }
 
@@ -56,61 +57,118 @@ class App extends React.Component {
     });
   }
 
-  resizeData() {
-    let size = this.state.size;
-    size = Number.parseInt(size, 10);
-    if ((!isNaN(size)) && (size > 0) && (`${size}` === this.state.size)) {
-      // size is correct
-      console.log('resize', size);
+  resizeData(size) {
+    this.setState({
+      settingsUpdating: true,
+      size: size
+    });
+    setTimeout(() => {
       this.setState({
-        btnDisabled: true
+        series: series(size),
+        settingsUpdating: false
       });
-      setTimeout(() => {
-        this.setState({
-          series: series(size),
-          btnDisabled: false
-        });
-      });
-    }
+    });
   }
 
-  renderToolbar() {
+  getDataSizeControl() {
     return (
-      <div style={ { textAlign: 'left', paddingTop: 10, paddingLeft: 10 } }>
-        <span>Number of points:</span>
-        <input
-          type="text"
-          size="8"
-          style={ { marginLeft: 10 } }
-          value={ this.state.size }
-          onChange={ event => this.onSizeChanged(event) }
+      <SelectField
+        style={ { width: '100%' } }
+        floatingLabelText="Number of points"
+        value={ this.state.size }
+        disabled={ this.state.settingsUpdating }
+        onChange={ (event, index, value) => this.resizeData(value) }
+      >
+        <MenuItem value={ 1000 } primaryText="1000" />
+        <MenuItem value={ 10000 } primaryText="10000" />
+        <MenuItem value={ 100000 } primaryText="100000" />
+        <MenuItem value={ 1000000 } primaryText="1000000" />
+      </SelectField>
+    );
+  }
+
+  getSamplesLimitControl() {
+    return (
+      <SelectField
+        style={ { width: '100%' } }
+        floatingLabelText="Number of visible points"
+        value={ this.state.samplesLimit }
+        disabled={ this.state.settingsUpdating }
+        onChange={ (event, index, value) => this.setState({ samplesLimit: value }) }
+      >
+        <MenuItem value={ 100 } primaryText="100" />
+        <MenuItem value={ 500 } primaryText="500" />
+        <MenuItem value={ 1000 } primaryText="1000" />
+        <MenuItem value={ 2000 } primaryText="2000" />
+      </SelectField>
+    );
+  }
+
+  getZoomControl() {
+    return (
+      <Checkbox
+        label="Zoom by rect (click events)"
+        checked={ this.state.zoomByRect }
+        onCheck={ event => this.setState({ zoomByRect: event.target.checked }) }
+        disabled={ this.state.settingsUpdating }
+      />
+    );
+  }
+
+  renderDrawer() {
+    return (
+      <Drawer
+        docked={ false }
+        width={ 300 }
+        open={ this.state.openDrawer }
+        onRequestChange={ open => this.setState({ openDrawer: open }) }
+      >
+        <AppBar
+          title="Settings"
+          showMenuIconButton={ false }
         />
-        <button
-          style={ { marginLeft: 10 } }
-          disabled={ this.state.btnDisabled }
-          onClick={ () => this.resizeData() }
-        >
-          SAVE
-        </button>
-      </div>
+        <div style={ { textAlign: 'left', padding: 10 } }>
+          { this.getDataSizeControl() }
+          { this.getSamplesLimitControl() }
+          { this.getZoomControl() }
+        </div>
+      </Drawer>
+    );
+  }
+
+  getAppBar() {
+    const rightButton = (
+      <IconButton
+        href="https://github.com/gromtech/react-signals-plot"
+      >
+        <GitHubIcon />
+      </IconButton>
+    );
+    return (
+      <AppBar
+        title={ `react-signals-plot ${packageJson.version}` }
+        iconElementRight={ rightButton }
+        onLeftIconButtonTouchTap={ () => this.setState({ openDrawer: true }) }
+      />
     );
   }
 
   render() {
     const interactive = true;
     return (
-      <MuiThemeProvider>
-        <div style={ { width: '100%', height: '100%' } }>
-          { getAppBar() }
-          { this.renderToolbar() }
+      <MuiThemeProvider muiTheme={ muiTheme }>
+        <div style={ { width: '100%', height: '100%', overflow: 'hidden' } }>
+          { this.getAppBar() }
+          { this.renderDrawer() }
           <ReactSignalsPlot
             style={ { width: '100%', height: 'calc(100% - 120px)' } }
             data={ this.state.series.data }
-            samplesLimit={ 100 }
+            samplesLimit={ this.state.samplesLimit }
             labels={ this.state.series.labels }
             interactive={ interactive }
+            zoomByRect={ this.state.zoomByRect }
           />
-          <div className="footer">
+          <div className="footer" style={ { paddingTop: 20 } }>
             Roman Guseinov, 2017
           </div>
         </div>
