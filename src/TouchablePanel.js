@@ -1,10 +1,22 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import './TouchablePanel.scss';
 
 class TouchablePanel extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      zoomByRect: props.zoomByRect,
+      firstPoint: null, // zoom rect
+      currentPoint: null // zoom rect
+    };
     this.touches = {};
+  }
+
+  componentWillReceiveProps(nextProps) {
+    this.setState({
+      zoomByRect: nextProps.zoomByRect
+    });
   }
 
   componentDidMount() {
@@ -92,7 +104,15 @@ class TouchablePanel extends React.Component {
     if (event.type === 'touchstart') {
       this.onTouchStart(event);
     } else if (!this.isTouch) {
-      this.mouseDownCoords = this.getCoordinates(event);
+      if (this.state.zoomByRect) {
+        this.setState({
+          firstPoint: {
+            coordinates: this.getCoordinates(event)
+          }
+        });
+      } else {
+        this.mouseDownCoords = this.getCoordinates(event);
+      }
     }
   }
 
@@ -114,15 +134,38 @@ class TouchablePanel extends React.Component {
   }
 
   onMouseUp() {
-    if (this.mouseDownCoords) {
-      this.mouseDownCoords = null;
+    if (this.state.zoomByRect) {
       event.stopPropagation();
       event.preventDefault();
+      const rect = this.getRect();
+      this.setState({
+        firstPoint: null,
+        currentPoint: null
+      });
+      if (rect && this.props.onZoom) {
+        if (rect.backward) {
+          this.props.onZoom({ reset: true });
+        } else {
+          this.props.onZoom({ rect: rect });
+        }
+      }
+    } else if (this.mouseDownCoords) {
+      event.stopPropagation();
+      event.preventDefault();
+      this.mouseDownCoords = null;
     }
   }
 
   onMouseMove(event) {
-    if (this.mouseDownCoords) {
+    if (this.state.zoomByRect && this.state.firstPoint) {
+      event.stopPropagation();
+      event.preventDefault();
+      this.setState({
+        currentPoint: {
+          coordinates: this.getCoordinates(event)
+        }
+      });
+    } else if (this.mouseDownCoords) {
       event.stopPropagation();
       event.preventDefault();
       const prev = this.mouseDownCoords;
@@ -184,6 +227,51 @@ class TouchablePanel extends React.Component {
     this.container = container;
   }
 
+  getRect() {
+    let rect = null;
+    const { zoomByRect, firstPoint, currentPoint } = this.state;
+    if (zoomByRect && firstPoint && currentPoint) {
+      const p1 = firstPoint.coordinates;
+      const p2 = currentPoint.coordinates;
+      rect = {};
+      if (p1.x < p2.x) {
+        rect.minX = p1.x;
+        rect.maxX = p2.x;
+      } else {
+        rect.backward = true;
+        rect.minX = p2.x;
+        rect.maxX = p1.x;
+      }
+      if (p1.y < p2.y) {
+        rect.minY = p1.y;
+        rect.maxY = p2.y;
+      } else {
+        rect.minY = p2.y;
+        rect.maxY = p1.y;
+      }
+    }
+    return rect;
+  }
+
+  renderZoomRect() {
+    let zoomRect = null;
+    const rect = this.getRect();
+    if (rect) {
+      const { height, width } = this.container.getBoundingClientRect();
+      const style = {
+        position: 'absolute',
+        left: Math.round(width * rect.minX),
+        right: Math.round(width * (1 - rect.maxX)),
+        top: Math.round(height * (1 - rect.maxY)),
+        bottom: Math.round(height * rect.minY)
+      };
+      zoomRect = (
+        <div style={ style } className="chart-zoom-rect" />
+      );
+    }
+    return zoomRect;
+  }
+
   render() {
     return (
       <div
@@ -192,7 +280,9 @@ class TouchablePanel extends React.Component {
         onWheel={ event => this.onMouseWheel(event) }
         onMouseDown={ event => this.onMouseDown(event) }
         onTouchStart={ event => this.onMouseDown(event) }
-      />
+      >
+        { this.renderZoomRect() }
+      </div>
     );
   }
 }
@@ -200,13 +290,15 @@ class TouchablePanel extends React.Component {
 TouchablePanel.propTypes = {
   style: PropTypes.object,
   onMove: PropTypes.func,
-  onZoom: PropTypes.func
+  onZoom: PropTypes.func,
+  zoomByRect: PropTypes.bool
 };
 
 TouchablePanel.defaultProps = {
   style: null,
   onMove: null,
-  onZoom: null
+  onZoom: null,
+  zoomByRect: false
 };
 
 export default TouchablePanel;

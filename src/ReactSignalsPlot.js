@@ -40,12 +40,15 @@ class ReactSignalsPlot extends React.Component {
     super(props);
     const datasources = this.prepareData(props.data);
     this.nonvisibleSignals = {};
+    const extent = getExtent(datasources);
     this.state = {
       data: datasources,
-      extent: getExtent(datasources),
+      extent: extent,
+      defaultExtent: extent,
       labels: props.labels,
       margin: props.margin,
-      legend: this.getLegend(datasources)
+      legend: this.getLegend(datasources),
+      zoomByRect: props.zoomByRect
     };
     this.style = Object.assign({ position: 'relative' }, props.style);
 
@@ -87,14 +90,26 @@ class ReactSignalsPlot extends React.Component {
     if ((this.props.data !== nextProps.data)) {
       const datasources = this.prepareData(nextProps.data, this.props.samplesLimit);
       const { clientHeight, clientWidth } = this.container || {};
+      const extent = getExtent(datasources);
       this.setState({
         data: datasources,
-        extent: getExtent(datasources),
+        extent: extent,
+        defaultExtent: extent,
         legend: this.getLegend(datasources),
         height: clientHeight,
-        width: clientWidth
+        width: clientWidth,
+        zoomByRect: nextProps.zoomByRect
       }, () => {
         this.refreshChart();
+      });
+    } else if (this.props.samplesLimit !== nextProps.samplesLimit) {
+      this.setState({
+        data: this.prepareData(this.props.data, nextProps.samplesLimit),
+        zoomByRect: nextProps.zoomByRect
+      }, () => this.refreshChart());
+    } else {
+      this.setState({
+        zoomByRect: nextProps.zoomByRect
       });
     }
   }
@@ -255,8 +270,14 @@ class ReactSignalsPlot extends React.Component {
   onChartZoom(params) {
     const extent = this.state.extent;
     if (extent && params) {
+      let newExtent;
+      if (params.reset) {
+        newExtent = this.state.defaultExtent;
+      } else {
+        newExtent = zoom.getExtent(this.state.extent, params);
+      }
       this.setState({
-        extent: zoom.getExtent(this.state.extent, params)
+        extent: newExtent
       }, () => this.refreshChart());
     }
   }
@@ -274,6 +295,7 @@ class ReactSignalsPlot extends React.Component {
       };
       panel = (
         <TouchablePanel
+          zoomByRect={ this.state.zoomByRect }
           style={ style }
           onMove={ shift => this.onChartMove(shift) }
           onZoom={ params => this.onChartZoom(params) }
@@ -324,7 +346,8 @@ ReactSignalsPlot.propTypes = {
   margin: PropTypes.object,
   style: PropTypes.object,
   interactive: PropTypes.bool,
-  showLegend: PropTypes.bool
+  showLegend: PropTypes.bool,
+  zoomByRect: PropTypes.bool
 };
 
 ReactSignalsPlot.defaultProps = {
@@ -339,7 +362,8 @@ ReactSignalsPlot.defaultProps = {
     left: 50
   },
   interactive: false,
-  showLegend: true
+  showLegend: true,
+  zoomByRect: false
 };
 
 export default ReactSignalsPlot;

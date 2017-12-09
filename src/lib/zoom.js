@@ -101,6 +101,25 @@ function getZoomedByTouches(extent, params) {
   return zoomed;
 }
 
+function getZoomedByRect(extent, params) {
+  let zoomed = extent;
+  if (extent && params && params.rect) {
+    const lenX = extent.x[1] - extent.x[0];
+    const lenY = extent.y[1] - extent.y[0];
+    zoomed = {
+      x: [
+        extent.x[0] + lenX * params.rect.minX,
+        extent.x[0] + lenX * params.rect.maxX,
+      ],
+      y: [
+        extent.y[0] + lenY * params.rect.minY,
+        extent.y[0] + lenY * params.rect.maxY,
+      ]
+    };
+  }
+  return zoomed;
+}
+
 /**
  * Get zoomed extent
  * @param {Object} extent - extent
@@ -114,6 +133,8 @@ function getZoomedExtent(extent, params) {
       zoomed = getZoomedByWheel(extent, params);
     } else if (Array.isArray(params.shifts)) {
       zoomed = getZoomedByTouches(extent, params);
+    } else if (params.rect) {
+      zoomed = getZoomedByRect(extent, params);
     }
   }
   return zoomed;
