@@ -1,4 +1,13 @@
 import { compressData } from './lib/compress';
+import search from './lib/search';
+
+function subArray(samples, first, last) {
+  let result = samples;
+  if ((first > 0) || (last < (samples.length - 1))) {
+    result = samples.slice(first, last + 1);
+  }
+  return result;
+}
 
 class DataSource {
   constructor(data, samplesLimit) {
@@ -61,15 +70,28 @@ class DataSource {
   }
 
   getData(min, max) {
-    // TODO use binary search
     let data = [];
-    if ((!min) && (!max)) {
+    if ((!min) || (!max)) {
       for (let i = 0; i < this.compressed.length; i++) {
         const samples = this.compressed[i];
         if (samples.length <= this.samplesLimit) {
           data = samples;
           break;
         }
+      }
+    } else {
+      let range = search.range(this.raw, min, max);
+      let samples = range.last - range.first + 1;
+      if (samples > this.samplesLimit) {
+        let level = 0;
+        while (((level + 1) < this.compressed.length) && (samples > this.samplesLimit)) {
+          samples /= 2;
+          level++;
+        }
+        range = search.range(this.compressed[level], min, max);
+        data = subArray(this.compressed[level], range.first, range.last);
+      } else {
+        data = subArray(this.raw, range.first, range.last);
       }
     }
     return data;

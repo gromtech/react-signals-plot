@@ -27,6 +27,7 @@
     "jsx-a11y/no-static-element-interactions": "off",
     "comma-dangle": "off",
     "no-console": "off",
+    "no-mixed-operators": "off",
     "object-shorthand": "off",
     "quotes": "off",
     "react/jsx-curly-spacing": [

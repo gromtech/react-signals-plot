@@ -10,13 +10,13 @@ const host = '0.0.0.0';
 const port = '8000';
 
 const plugins = [];
-let outputFile;
+const outputFile = `${appName}.js`;
 
 if (env === 'build') {
+  plugins.push(new webpack.DefinePlugin({
+    'process.env.NODE_ENV': JSON.stringify('production')
+  }));
   plugins.push(new UglifyJsPlugin({ minimize: true }));
-  outputFile = `${appName}.min.js`;
-} else {
-  outputFile = `${appName}.js`;
 }
 
 const config = {
@@ -42,7 +42,8 @@ const config = {
         loaders: ['style-loader', 'css-loader', 'sass-loader']
       }
     ]
-  }
+  },
+  plugins: plugins
 };
 
 if (env === 'dev') {

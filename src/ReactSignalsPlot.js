@@ -1,61 +1,18 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import dimensions from 'react-dimensions';
 import * as d3 from 'd3';
+import _ from 'underscore';
 import DataSource from './DataSource';
+import TouchablePanel from './TouchablePanel';
+import SignalsLegend from './SignalsLegend';
+import zoom from './lib/zoom';
 
 import './ReactSignalsPlot.scss';
 
-class ReactSignalsPlot extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      data: this.prepareData(props.data),
-      labels: props.labels,
-      margin: props.margin,
-      height: props.containerHeight,
-      width: props.containerWidth
-    };
-  }
-
-  prepareData(data) {
-    let prepared = [];
-    if (Array.isArray(data)) {
-      prepared = data.map((item) => {
-        const datasource = new DataSource(item.values, this.props.samplesLimit);
-        return {
-          id: item.id,
-          ds: datasource
-        };
-      });
-    }
-    return prepared;
-  }
-
-  componentWillReceiveProps(nextProps) {
-    this.setState({
-      height: nextProps.containerHeight,
-      width: nextProps.containerWidth,
-      data: this.prepareData(nextProps.data)
-    }, () => {
-      this.refreshChart();
-    });
-  }
-
-  getSvgHeight() {
-    const { height, margin } = this.state;
-    return height - margin.top - margin.bottom;
-  }
-
-  getSvgWidth() {
-    const { width, margin } = this.state;
-    return width - margin.left - margin.right;
-  }
-
-  getExtent() {
-    const data = this.state.data;
-    let extent = null;
-    data.forEach((line) => {
+function getExtent(datasources) {
+  let extent = null;
+  if (Array.isArray(datasources)) {
+    datasources.forEach((line) => {
       const lineExtent = line.ds.getExtent();
       if (!extent) {
         extent = lineExtent;
@@ -74,7 +31,111 @@ class ReactSignalsPlot extends React.Component {
         }
       }
     });
-    return extent;
+  }
+  return extent;
+}
+
+class ReactSignalsPlot extends React.Component {
+  constructor(props) {
+    super(props);
+    const datasources = this.prepareData(props.data);
+    this.nonvisibleSignals = {};
+    const extent = getExtent(datasources);
+    this.state = {
+      data: datasources,
+      extent: extent,
+      defaultExtent: extent,
+      labels: props.labels,
+      margin: props.margin,
+      legend: this.getLegend(datasources),
+      zoomByRect: props.zoomByRect
+    };
+    this.style = Object.assign({ position: 'relative' }, props.style);
+
+    this.onResize = _.debounce(() => {
+      if (this.container) {
+        this.setState({
+          height: this.container.clientHeight,
+          width: this.container.clientWidth
+        }, () => {
+          this.refreshChart();
+        });
+      }
+    }, 200);
+  }
+
+  componentDidMount() {
+    window.addEventListener('resize', this.onResize, false);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.onResize);
+  }
+
+  prepareData(data, samplesLimit) {
+    let prepared = [];
+    if (Array.isArray(data)) {
+      prepared = data.map((item) => {
+        const datasource = new DataSource(item.values, samplesLimit || this.props.samplesLimit);
+        return {
+          id: item.id,
+          ds: datasource
+        };
+      });
+    }
+    return prepared;
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if ((this.props.data !== nextProps.data)) {
+      const datasources = this.prepareData(nextProps.data, this.props.samplesLimit);
+      const { clientHeight, clientWidth } = this.container || {};
+      const extent = getExtent(datasources);
+      this.setState({
+        data: datasources,
+        extent: extent,
+        defaultExtent: extent,
+        legend: this.getLegend(datasources),
+        height: clientHeight,
+        width: clientWidth,
+        zoomByRect: nextProps.zoomByRect
+      }, () => {
+        this.refreshChart();
+      });
+    } else if (this.props.samplesLimit !== nextProps.samplesLimit) {
+      this.setState({
+        data: this.prepareData(this.props.data, nextProps.samplesLimit),
+        zoomByRect: nextProps.zoomByRect
+      }, () => this.refreshChart());
+    } else {
+      this.setState({
+        zoomByRect: nextProps.zoomByRect
+      });
+    }
+  }
+
+  getLegend(data) {
+    const legend = [];
+    if (Array.isArray(data)) {
+      data.forEach((item, index) => {
+        legend.push({
+          name: item.id,
+          color: d3.schemeCategory10[index % 10],
+          visible: !this.nonvisibleSignals[item.id]
+        });
+      });
+    }
+    return legend;
+  }
+
+  getSvgHeight() {
+    const { height, margin } = this.state;
+    return height - margin.top - margin.bottom;
+  }
+
+  getSvgWidth() {
+    const { width, margin } = this.state;
+    return width - margin.left - margin.right;
   }
 
   createAxisBottom(g, scaleLinear) {
@@ -108,7 +169,7 @@ class ReactSignalsPlot extends React.Component {
   }
 
   refreshChart() {
-    if (this.state.height && this.state.width) {
+    if (this.state.height && this.state.width && this.state.extent) {
       this.refreshLineChart();
     }
   }
@@ -131,8 +192,19 @@ class ReactSignalsPlot extends React.Component {
       .x(d => x(d.x))
       .y(d => y(d.y));
 
-    const data = this.state.data;
-    const extent = this.getExtent();
+    const data = this.state.data.map((series) => {
+      if (!this.nonvisibleSignals[series.id]) {
+        return series;
+      }
+      return {
+        id: series.id,
+        ds: {
+          getData: () => []
+        }
+      };
+    });
+
+    const extent = this.state.extent;
     x.domain(extent.x);
     y.domain(extent.y);
     z.domain(data.map(series => series.id));
@@ -149,7 +221,7 @@ class ReactSignalsPlot extends React.Component {
       .attr('class', 'line')
       .attr('fill', 'none')
       .attr('stroke-width', '0.1em')
-      .attr('d', d => line(d.ds.getData()))
+      .attr('d', d => line(d.ds.getData(extent.x[0], extent.x[1])))
       .style('stroke', d => z(d.id));
   }
 
@@ -181,13 +253,87 @@ class ReactSignalsPlot extends React.Component {
     }
   }
 
+  onChartMove(shift) {
+    const extent = this.state.extent;
+    if (extent && shift) {
+      const dx = (extent.x[1] - extent.x[0]) * shift.x;
+      const dy = (extent.y[1] - extent.y[0]) * shift.y;
+      this.setState({
+        extent: {
+          x: [extent.x[0] - dx, extent.x[1] - dx],
+          y: [extent.y[0] - dy, extent.y[1] - dy]
+        }
+      }, () => this.refreshChart());
+    }
+  }
+
+  onChartZoom(params) {
+    const extent = this.state.extent;
+    if (extent && params) {
+      let newExtent;
+      if (params.reset) {
+        newExtent = this.state.defaultExtent;
+      } else {
+        newExtent = zoom.getExtent(this.state.extent, params);
+      }
+      this.setState({
+        extent: newExtent
+      }, () => this.refreshChart());
+    }
+  }
+
+  getTouchablePanel() {
+    let panel = null;
+    if (this.props.interactive) {
+      const margin = this.state.margin;
+      const style = {
+        position: 'absolute',
+        top: margin.top,
+        right: margin.right,
+        bottom: margin.bottom,
+        left: margin.left
+      };
+      panel = (
+        <TouchablePanel
+          zoomByRect={ this.state.zoomByRect }
+          style={ style }
+          onMove={ shift => this.onChartMove(shift) }
+          onZoom={ params => this.onChartZoom(params) }
+        />
+      );
+    }
+    return panel;
+  }
+
+  onLegendItemClick(item) {
+    this.nonvisibleSignals[item.name] = !this.nonvisibleSignals[item.name];
+    this.setState({
+      legend: this.getLegend(this.state.data)
+    }, () => this.refreshChart());
+  }
+
+  renderLegend() {
+    let legend = null;
+    if (this.props.showLegend) {
+      legend = (
+        <SignalsLegend
+          signals={ this.state.legend }
+          onItemClick={ item => this.onLegendItemClick(item) }
+        />
+      );
+    }
+    return legend;
+  }
+
   render() {
     return (
       <div
-        style={ this.props.style }
+        style={ this.style }
         ref={ c => this.setContainer(c) }
       >
         { this.renderSvg() }
+        { this.getTouchablePanel() }
+        { this.renderLegend() }
       </div>
     );
   }
@@ -199,8 +345,9 @@ ReactSignalsPlot.propTypes = {
   labels: PropTypes.object,
   margin: PropTypes.object,
   style: PropTypes.object,
-  containerHeight: PropTypes.number,
-  containerWidth: PropTypes.number
+  interactive: PropTypes.bool,
+  showLegend: PropTypes.bool,
+  zoomByRect: PropTypes.bool
 };
 
 ReactSignalsPlot.defaultProps = {
@@ -211,11 +358,12 @@ ReactSignalsPlot.defaultProps = {
   margin: {
     top: 20,
     right: 50,
-    bottom: 30,
+    bottom: 40,
     left: 50
   },
-  containerHeight: 0,
-  containerWidth: 0
+  interactive: false,
+  showLegend: true,
+  zoomByRect: false
 };
 
-export default dimensions()(ReactSignalsPlot);
+export default ReactSignalsPlot;
