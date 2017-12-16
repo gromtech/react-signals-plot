@@ -11,6 +11,13 @@ class TouchablePanel extends React.Component {
       currentPoint: null // zoom rect
     };
     this.touches = {};
+    this.listeners = {
+      mouseup: this.onMouseUp.bind(this),
+      mousemove: this.onMouseMove.bind(this),
+      touchmove: this.onTouchMove.bind(this),
+      touchend: this.onTouchEnd.bind(this),
+      contextmenu: this.onContextMenu.bind(this)
+    };
   }
 
   componentWillReceiveProps(nextProps) {
@@ -20,17 +27,16 @@ class TouchablePanel extends React.Component {
   }
 
   componentDidMount() {
-    window.addEventListener('mouseup', this.onMouseUp.bind(this));
-    window.addEventListener('mousemove', this.onMouseMove.bind(this));
-    window.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
-    window.addEventListener('touchend', this.onTouchEnd.bind(this));
+    Object.keys(this.listeners).forEach((eventName) => {
+      const options = eventName === 'touchmove' ? { passive: false } : null;
+      window.addEventListener(eventName, this.listeners[eventName], options);
+    });
   }
 
   componentWillUnmount() {
-    window.removeEventListener('mouseup', this.onMouseUp.bind(this));
-    window.removeEventListener('mousemove', this.onMouseMove.bind(this));
-    window.removeEventListener('touchmove', this.onTouchMove.bind(this));
-    window.removeEventListener('touchend', this.onTouchEnd.bind(this));
+    Object.keys(this.listeners).forEach((eventName) => {
+      window.removeEventListener(eventName, this.listeners[eventName]);
+    });
   }
 
   getNormalizedCoordinates(clientX, clientY, id) {
@@ -100,11 +106,18 @@ class TouchablePanel extends React.Component {
     }
   }
 
+  onContextMenu(event) {
+    if (this.disableContextMenu) {
+      this.disableContextMenu = false;
+      event.preventDefault();
+    }
+  }
+
   onMouseDown(event) {
     if (event.type === 'touchstart') {
       this.onTouchStart(event);
     } else if (!this.isTouch) {
-      if (this.state.zoomByRect) {
+      if (this.state.zoomByRect && (event.button === 0)) {
         this.setState({
           firstPoint: {
             coordinates: this.getCoordinates(event)
@@ -134,9 +147,10 @@ class TouchablePanel extends React.Component {
   }
 
   onMouseUp() {
-    if (this.state.zoomByRect) {
+    if (this.state.zoomByRect && (event.button === 0)) {
       event.stopPropagation();
       event.preventDefault();
+      this.disableContextMenu = true;
       const rect = this.getRect();
       this.setState({
         firstPoint: null,
@@ -152,6 +166,7 @@ class TouchablePanel extends React.Component {
     } else if (this.mouseDownCoords) {
       event.stopPropagation();
       event.preventDefault();
+      this.disableContextMenu = true;
       this.mouseDownCoords = null;
     }
   }
