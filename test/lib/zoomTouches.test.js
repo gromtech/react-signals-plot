@@ -1,10 +1,11 @@
 /* eslint-env mocha */
-const chai = require('chai');
-const zoom = require('../../src/lib/zoom');
+import chai from 'chai';
+import TouchAccurateZoomer from '../../src/zoomers/TouchAccurateZoomer';
 
 chai.use(require('chai-roughly'));
 
 const expect = chai.expect;
+const zoomer = new TouchAccurateZoomer();
 
 describe('zoom-touches', () => {
   it('should return original extent if shifts number !== 2', () => {
@@ -17,7 +18,7 @@ describe('zoom-touches', () => {
     };
     for (let i = 0; i < 4; i++) {
       if (i !== 2) {
-        const actual = zoom.getExtent(orignal, params);
+        const actual = zoomer.getExtent(orignal, params);
         expect(actual).to.roughly.deep.equal(orignal);
       }
       params.shifts.push({ x1: 0, y1: 0, x2: 1, y2: 1 });
@@ -39,7 +40,7 @@ describe('zoom-touches', () => {
       x: [0.5, 5.5],
       y: [0, 10]
     };
-    const actual = zoom.getExtent(orignal, params);
+    const actual = zoomer.getExtent(orignal, params);
     expect(actual).to.roughly.deep.equal(expected);
   });
 
@@ -58,7 +59,7 @@ describe('zoom-touches', () => {
       x: [-1, 19],
       y: [0, 10]
     };
-    const actual = zoom.getExtent(orignal, params);
+    const actual = zoomer.getExtent(orignal, params);
     expect(actual).to.roughly.deep.equal(expected);
   });
 
@@ -77,7 +78,7 @@ describe('zoom-touches', () => {
       x: [0, 10],
       y: [0.5, 5.5]
     };
-    const actual = zoom.getExtent(orignal, params);
+    const actual = zoomer.getExtent(orignal, params);
     expect(actual).to.roughly.deep.equal(expected);
   });
 
@@ -96,7 +97,7 @@ describe('zoom-touches', () => {
       x: [0, 10],
       y: [-1, 19]
     };
-    const actual = zoom.getExtent(orignal, params);
+    const actual = zoomer.getExtent(orignal, params);
     expect(actual).to.roughly.deep.equal(expected);
   });
 });

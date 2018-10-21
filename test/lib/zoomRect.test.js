@@ -1,8 +1,9 @@
 /* eslint-env mocha */
-const chai = require('chai');
-const zoom = require('../../src/lib/zoom');
+import chai from 'chai';
+import DefaultZoomer from '../../src/zoomers/DefaultZoomer';
 
 const expect = chai.expect;
+const zoomer = new DefaultZoomer();
 
 describe('zoom-rect', () => {
   it('should zoom-in', () => {
@@ -22,7 +23,7 @@ describe('zoom-rect', () => {
       x: [11, 19],
       y: [21, 25],
     };
-    const actual = zoom.getExtent(orignal, params);
+    const actual = zoomer.getExtent(orignal, params);
     expect(actual).to.deep.equal(expected);
   });
 });

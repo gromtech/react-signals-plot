@@ -114,7 +114,8 @@
         ]
       }
     ],
-    "react/prefer-stateless-function": "off"
+    "react/prefer-stateless-function": "off",
+    "class-methods-use-this": "off"
   },
   "globals": {
     "DataStore": true
