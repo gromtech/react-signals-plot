@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 /* eslint-disable import/no-extraneous-dependencies */
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import getMuiTheme from 'material-ui/styles/getMuiTheme';
-import injectTapEventPlugin from 'react-tap-event-plugin';
 import { blue500, blue700 } from 'material-ui/styles/colors';
 import AppBar from 'material-ui/AppBar';
 import Drawer from 'material-ui/Drawer';
@@ -16,8 +15,6 @@ import MenuItem from 'material-ui/MenuItem';
 import ReactSignalsPlot from '../../src/ReactSignalsPlot';
 import series from '../series/sin';
 import packageJson from '../../package.json';
-
-injectTapEventPlugin();
 
 const muiTheme = getMuiTheme({
   palette: {
@@ -148,7 +145,7 @@ class App extends React.Component {
       <AppBar
         title={ `react-signals-plot ${packageJson.version}` }
         iconElementRight={ rightButton }
-        onLeftIconButtonTouchTap={ () => this.setState({ openDrawer: true }) }
+        onLeftIconButtonClick={ () => this.setState({ openDrawer: true }) }
       />
     );
   }
