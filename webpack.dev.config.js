@@ -1,41 +1,13 @@
 const webpack = require('webpack');
-const WebpackDevServer = require('webpack-dev-server');
-const path = require('path');
 
-const UglifyJsPlugin = webpack.optimize.UglifyJsPlugin;
-const env = process.env.WEBPACK_ENV || 'dev';
-
-const appName = 'index';
-const host = '0.0.0.0';
-const port = '8000';
-
-const plugins = [];
-const outputFile = `${appName}.js`;
-
-if (env === 'build') {
-  plugins.push(new webpack.DefinePlugin({
-    'process.env.NODE_ENV': JSON.stringify('production')
-  }));
-  plugins.push(new UglifyJsPlugin({ minimize: true }));
-}
-
-const config = {
+module.exports = {
   entry: './example/src/index.js',
-  output: {
-    path: path.resolve(__dirname, 'example/dist'),
-    filename: outputFile
-  },
   module: {
     rules: [
       {
-        test: /(\.jsx|\.js)$/,
-        exclude: /(node_modules|bower_components|build)/,
-        use: {
-          loader: 'babel-loader',
-          options: {
-            presets: ['env']
-          }
-        }
+        test: /\.(js|jsx)$/,
+        exclude: /node_modules/,
+        use: ['babel-loader']
       },
       {
         test: /\.scss$/,
@@ -43,22 +15,20 @@ const config = {
       }
     ]
   },
-  plugins: plugins
-};
-
-if (env === 'dev') {
-  new WebpackDevServer(webpack(config), {
+  resolve: {
+    extensions: ['*', '.js', '.jsx']
+  },
+  output: {
+    path: __dirname + '/example/dist',
+    publicPath: '/',
+    filename: 'index.js'
+  },
+  plugins: [
+    new webpack.HotModuleReplacementPlugin()
+  ],
+  devServer: {
     contentBase: './example/dist',
     hot: true,
-    debug: true
-  }).listen(port, host, (err) => {
-    if (err) {
-      console.log(err);
-    }
-  });
-  console.log('-------------------------');
-  console.log(`Local web server runs at http://${host}:${port}`);
-  console.log('-------------------------');
-}
-
-module.exports = config;
+    port: 9000
+  }
+};

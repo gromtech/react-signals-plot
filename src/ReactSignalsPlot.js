@@ -5,7 +5,7 @@ import _ from 'underscore';
 import DataSource from './DataSource';
 import TouchablePanel from './TouchablePanel';
 import SignalsLegend from './SignalsLegend';
-import zoom from './lib/zoom';
+import DefaultZoomer from './zoomers/DefaultZoomer';
 
 import './ReactSignalsPlot.scss';
 
@@ -62,6 +62,8 @@ class ReactSignalsPlot extends React.Component {
         });
       }
     }, 200);
+
+    this.zoomer = new DefaultZoomer();
   }
 
   componentDidMount() {
@@ -274,7 +276,7 @@ class ReactSignalsPlot extends React.Component {
       if (params.reset) {
         newExtent = this.state.defaultExtent;
       } else {
-        newExtent = zoom.getExtent(this.state.extent, params);
+        newExtent = this.zoomer.getExtent(this.state.extent, params);
       }
       this.setState({
         extent: newExtent
