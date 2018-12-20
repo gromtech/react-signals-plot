@@ -1,6 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import * as d3 from 'd3';
+import { schemeCategory10 } from 'd3-scale-chromatic';
+import { select } from 'd3-selection';
+import { axisBottom, axisLeft } from 'd3-axis';
+import { scaleLinear, scaleOrdinal } from 'd3-scale';
+import * as d3Shape from 'd3-shape';
 import _ from 'underscore';
 import DataSource from './DataSource';
 import TouchablePanel from './TouchablePanel';
@@ -122,7 +126,7 @@ class ReactSignalsPlot extends React.Component {
       data.forEach((item, index) => {
         legend.push({
           name: item.id,
-          color: d3.schemeCategory10[index % 10],
+          color: schemeCategory10[index % 10],
           visible: !this.nonvisibleSignals[item.id]
         });
       });
@@ -147,7 +151,7 @@ class ReactSignalsPlot extends React.Component {
     g.append('g')
       .attr('class', 'axis axis--x grid')
       .attr('transform', `translate(0,${height})`)
-      .call(d3.axisBottom(scaleLinear).tickSize(-height))
+      .call(axisBottom(scaleLinear).tickSize(-height))
       .append('text')
       .style('text-anchor', 'end')
       .attr('x', width - 5)
@@ -160,7 +164,7 @@ class ReactSignalsPlot extends React.Component {
     const width = this.getSvgWidth();
     g.append('g')
       .attr('class', 'axis axis--y grid')
-      .call(d3.axisLeft(scaleLinear).tickSize(-width))
+      .call(axisLeft(scaleLinear).tickSize(-width))
       .append('text')
       .attr('transform', 'rotate(-90)')
       .attr('y', 5)
@@ -178,7 +182,7 @@ class ReactSignalsPlot extends React.Component {
 
   refreshLineChart() {
     const node = this.node;
-    const svg = d3.select(node);
+    const svg = select(node);
     const margin = this.state.margin;
     svg.selectAll('*').remove();
 
@@ -186,11 +190,11 @@ class ReactSignalsPlot extends React.Component {
     const height = this.getSvgHeight();
     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
-    const x = d3.scaleLinear().range([0, width]);
-    const y = d3.scaleLinear().range([height, 0]);
-    const z = d3.scaleOrdinal(d3.schemeCategory10);
+    const x = scaleLinear().range([0, width]);
+    const y = scaleLinear().range([height, 0]);
+    const z = scaleOrdinal(schemeCategory10);
 
-    const line = d3.line()
+    const line = d3Shape.line()
       .x(d => x(d.x))
       .y(d => y(d.y));
 
