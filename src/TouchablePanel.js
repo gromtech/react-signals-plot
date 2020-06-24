@@ -99,7 +99,7 @@ class TouchablePanel extends React.Component {
     event.preventDefault();
     const delta = event.deltaY || event.detail || event.wheelDelta;
     const zoom = Object.assign({}, this.getCoordinates(event), {
-      value: delta < 0 ? 0.5 : 2
+      value: Math.min(Math.max(0.5, 1 - delta * 0.01), 2)
     });
     if (this.props.onZoom) {
       this.props.onZoom(zoom);

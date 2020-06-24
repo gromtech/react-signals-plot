@@ -82,7 +82,15 @@
     ],
     "indent": [
       "error",
-      2
+      4
+    ],
+    "react/jsx-indent": [
+      "error",
+      4
+    ],
+    "react/jsx-indent-props": [
+      "error",
+      4
     ],
     "linebreak-style": "off",
     "no-restricted-properties": [
