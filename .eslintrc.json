@@ -109,6 +109,7 @@
         "message": "Please use Object.defineProperty instead."
       }
     ],
+    "prefer-destructuring": "off",
     "semi": [
       "error",
       "always"

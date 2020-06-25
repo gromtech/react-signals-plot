@@ -131,9 +131,7 @@ class App extends React.Component {
                 open={ openDrawer }
                 onClose={ () => this.setState({ openDrawer: false }) }
             >
-                <AppBar position="static" style={ { height: 64 } }>
-                    <Typography variant="h6" style={ { flexGrow: 1 } }>Settings</Typography>
-                </AppBar>
+                <AppBar position="static" style={ { height: 64 } } />
                 <div style={ { textAlign: 'left', padding: 10 } }>
                     {this.getDataSizeControl()}
                     {this.getSamplesLimitControl()}
