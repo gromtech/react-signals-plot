@@ -7,6 +7,8 @@ import AppBar from '@material-ui/core/AppBar';
 import Drawer from '@material-ui/core/Drawer';
 import IconButton from '@material-ui/core/IconButton';
 import SvgIcon from '@material-ui/core/SvgIcon';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import FormGroup from '@material-ui/core/FormGroup';
 import Checkbox from '@material-ui/core/Checkbox';
 import InputLabel from '@material-ui/core/InputLabel';
 import SelectField from '@material-ui/core/Select';
@@ -111,12 +113,40 @@ class App extends React.Component {
     getZoomControl() {
         const { zoomByRect, settingsUpdating } = this.state;
 
-        return (
+        const checkbox = (
             <Checkbox
-                label="Zoom by rect (click events)"
-                checked={ zoomByRect }
+                checked={ !!zoomByRect }
                 onChange={ event => this.setState({ zoomByRect: event.target.checked }) }
+                name="zoomByRect"
+                color="primary"
                 disabled={ settingsUpdating }
+            />
+        );
+
+        return (
+            <FormControlLabel
+                control={ checkbox }
+                label="Zoom by rect (click events)"
+            />
+        );
+    }
+
+    changeLabels() {
+        const { useOtherLabels } = this.state;
+
+        const checkbox = (
+            <Checkbox
+                checked={ !!useOtherLabels }
+                onChange={ event => this.setState({ useOtherLabels: event.target.checked }) }
+                name="otherLabels"
+                color="primary"
+            />
+        );
+
+        return (
+            <FormControlLabel
+                control={ checkbox }
+                label="Use other labels"
             />
         );
     }
@@ -135,7 +165,10 @@ class App extends React.Component {
                 <div style={ { textAlign: 'left', padding: 10 } }>
                     {this.getDataSizeControl()}
                     {this.getSamplesLimitControl()}
-                    {this.getZoomControl()}
+                    <FormGroup>
+                        { this.getZoomControl() }
+                        { this.changeLabels() }
+                    </FormGroup>
                 </div>
             </Drawer>
         );
@@ -171,7 +204,15 @@ class App extends React.Component {
 
     render() {
         const interactive = true;
-        const { series, zoomByRect, samplesLimit } = this.state;
+        const {
+            series, zoomByRect, samplesLimit, useOtherLabels
+        } = this.state;
+
+        const labels = useOtherLabels ? {
+            x: 'X',
+            y: 'Y'
+        } : series.labels;
+
         return (
             <MuiThemeProvider theme={ muiTheme }>
                 <div style={ { width: '100%', height: '100%', overflow: 'hidden' } }>
@@ -181,7 +222,7 @@ class App extends React.Component {
                         style={ { width: '100%', height: 'calc(100% - 120px)' } }
                         data={ series.data }
                         samplesLimit={ samplesLimit }
-                        labels={ series.labels }
+                        labels={ labels }
                         interactive={ interactive }
                         zoomByRect={ zoomByRect }
                     />

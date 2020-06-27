@@ -94,31 +94,40 @@ class ReactSignalsPlot extends React.Component {
     }
 
     componentWillReceiveProps(nextProps) {
-        const { data, samplesLimit } = this.props;
+        const { data, samplesLimit, labels } = this.props;
+
+        const stateProps = {
+            labels: nextProps.labels,
+            zoomByRect: nextProps.zoomByRect
+        };
 
         if (data !== nextProps.data) {
             const datasources = this.prepareData(nextProps.data, samplesLimit);
             const { clientHeight, clientWidth } = this.container || {};
             const extent = getExtent(datasources);
             this.setState({
+                ...stateProps,
                 data: datasources,
                 extent: extent,
                 defaultExtent: extent,
                 legend: this.getLegend(datasources),
                 height: clientHeight,
-                width: clientWidth,
-                zoomByRect: nextProps.zoomByRect
+                width: clientWidth
             }, () => {
                 this.refreshChart();
             });
         } else if (samplesLimit !== nextProps.samplesLimit) {
             this.setState({
-                data: this.prepareData(data, nextProps.samplesLimit),
-                zoomByRect: nextProps.zoomByRect
+                ...stateProps,
+                data: this.prepareData(data, nextProps.samplesLimit)
             }, () => this.refreshChart());
         } else {
             this.setState({
-                zoomByRect: nextProps.zoomByRect
+                ...stateProps,
+            }, () => {
+                if (labels !== nextProps.labels) {
+                    this.refreshChart();
+                }
             });
         }
     }

@@ -30,6 +30,6 @@ module.exports = {
         contentBase: './example/dist',
         hot: true,
         host: '0.0.0.0',
-        port: 9000
+        port: 9001
     }
 };

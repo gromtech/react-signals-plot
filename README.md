@@ -65,3 +65,12 @@ class PlotExample extends React.Component {
 1. ```npm run build``` - build component
 2. ```npm run dev``` - start webpack-dev-server
 3. ```npm run test``` - run unit tests
+
+## How to publish
+
+1. Login: ```npm login```
+2. Setup version in ```package.json``` (X.X.X-alpha.XX for non-public versions).
+3. Build component: ```npm run build```
+4. Publish:
+* ```npm run publish-beta``` - non-public versions
+* ```npm publish``` - public versions
