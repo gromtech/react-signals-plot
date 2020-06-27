@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import disableScroll from 'disable-scroll';
 import './TouchablePanel.scss';
 
 class TouchablePanel extends React.Component {
@@ -18,6 +19,7 @@ class TouchablePanel extends React.Component {
             touchend: this.onTouchEnd.bind(this),
             contextmenu: this.onContextMenu.bind(this)
         };
+        this.scrollDisabled = false;
     }
 
     componentWillReceiveProps(nextProps) {
@@ -96,10 +98,9 @@ class TouchablePanel extends React.Component {
 
     onMouseWheel(event) {
         event.stopPropagation();
-        event.preventDefault();
         const delta = event.deltaY || event.detail || event.wheelDelta;
         const zoom = Object.assign({}, this.getCoordinates(event), {
-            value: Math.min(Math.max(0.5, 1 - delta * 0.01), 2)
+            value: Math.min(Math.max(0.5, 1 + delta * 0.01), 2)
         });
         const { onZoom } = this.props;
         if (onZoom) {
@@ -299,6 +300,22 @@ class TouchablePanel extends React.Component {
         return zoomRect;
     }
 
+    disableScroll() {
+        if (!this.scrollDisabled) {
+            disableScroll.on();
+
+            this.scrollDisabled = true;
+        }
+    }
+
+    enableScroll() {
+        if (this.scrollDisabled) {
+            disableScroll.off();
+
+            this.scrollDisabled = false;
+        }
+    }
+
     render() {
         const { style } = this.props;
 
@@ -309,6 +326,9 @@ class TouchablePanel extends React.Component {
                 onWheel={ event => this.onMouseWheel(event) }
                 onMouseDown={ event => this.onMouseDown(event) }
                 onTouchStart={ event => this.onMouseDown(event) }
+                onMouseMove={ () => this.disableScroll() }
+                onMouseEnter={ () => this.disableScroll() }
+                onMouseLeave={ () => this.enableScroll() }
             >
                 {this.renderZoomRect()}
             </div>
